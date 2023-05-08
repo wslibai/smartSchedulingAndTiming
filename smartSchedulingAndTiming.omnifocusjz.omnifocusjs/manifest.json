@@ -1,0 +1,62 @@
+{
+    "author": "@libai",
+    "identifier": "com.Macrosoft.of-smartSchedulingAndTiming",
+    "version": "1.0",
+    "description": "任务智能调度和时间跟踪工具for omnifocus。\n task smart scheduling and timeing tools built for OmniFocus.",
+    "actions": [
+        {
+            "image": "taskScheduling.png",
+            "identifier": "taskScheduling"
+        },
+        {
+            "image": "timeArrangement.png",
+            "identifier": "timeArrangement"
+        },
+        {
+            "image": "start.png",
+            "identifier": "startTomatoClock"
+        },
+        {
+            "image": "stop.png",
+            "identifier": "stopTomatoClock"
+        },
+        {
+            "image": "sum.png",
+            "identifier": "sumTimeSpent"
+        },        
+        {
+            "image": "clean.png",
+            "identifier": "cleanTimeData"
+        },
+        {
+            "image": "clean.png",
+            "identifier": "cleanSchedulingTask"
+        },
+        {
+            "image": "output.png",
+            "identifier": "outputTaskSchedulingData"
+        },
+        {
+            "image": "output.png",
+            "identifier": "outputTomatoClockData"
+        },
+        {
+            "image": "set.png",
+            "identifier": "setPreferences"
+        },
+        {
+            "image": "initialize.png",
+            "identifier": "initialize"
+        },
+        {
+            "image": "about.png",
+            "identifier": "about"
+        }
+    ],
+    "libraries": [
+        {
+            "identifier": "libTimer"
+        }
+    ],
+    "defaultLocale": "en" 
+}

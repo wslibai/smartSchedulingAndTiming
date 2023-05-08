@@ -1,0 +1,4 @@
+"label" = "stop tomato clock";
+"shortLabel" = "stopTomatoClock";
+"mediumLabel" = "stop tomato clock";
+"longLabel" = "process the first TODO and start tomato clock.";

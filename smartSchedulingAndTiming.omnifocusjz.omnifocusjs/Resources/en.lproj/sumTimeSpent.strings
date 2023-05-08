@@ -1,0 +1,4 @@
+"label" = "sum & update timeSpent";
+"shortLabel" = "TimeSpent sum&Update";
+"mediumLabel" = "sum & update project/task's timeSpent";
+"longLabel" = "Update this project/task's timeSpent by  summing all child task's timeSpent together.";

@@ -1,0 +1,4 @@
+"label" = "clean scheduling task";
+"shortLabel" = "cleanSchedulingTask";
+"mediumLabel" = "clean scheduling task data";
+"longLabel" = "clean scheduling task data to do task scheduling again.";
