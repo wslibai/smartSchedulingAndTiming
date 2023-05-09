@@ -328,7 +328,7 @@
 				throw new Error(errMessage)
 			}
 			
-			let childTag = parentTag.children.byName(tagName)
+			let childTag = parentTag.flattenedChildren.byName(tagName)
 			if(!childTag){
 				let errMessage = `There is no tag “${tagName}” in “${tagGroup}” tagGroup.` 
 				throw new Error(errMessage)
@@ -351,6 +351,12 @@
 			//console.log(`${prefix}${t.name}: `,preferences.readString(`${prefix}${t.name}`))
 			preferencesValues[`${prefix}${t.name}`]=preferences.readString(`${prefix}${t.name}`)
 		}
+	}
+	
+	
+	libTimer.getMaxNumberOfScheduledTasks=function(){
+		const preferences = libTimer.loadSyncedPrefs()
+		return preferences.readString("maxNumberOfScheduledTasks") || 20
 	}
 	
 	
@@ -628,7 +634,12 @@
 			tags,
 			tags.map(t => t.name),
 			libTimer.getTagIdsToExclude().map(t=>Tag.byIdentifier(t))))
-			
+		
+		inputForm.addField(new Form.Field.String(
+			"maxNumberOfScheduledTasks",
+			"max number Of scheduled tasks(5-60)",
+			libTimer.getMaxNumberOfScheduledTasks()))		
+
 		inputForm.addField(new Form.Field.String(
 			"tomatoFocusDuration",
 			"tomato Focus Duration in minutes(10-59)",
@@ -801,6 +812,8 @@
 		var formPromise = inputForm.show(formPrompt,"Continue")
 		
 		inputForm.validate = function(formObject){
+			let maxNumberOfScheduledTasksStatus=new RegExp("^([5-9]|[1-5][0-9]|[6][0])$").test(formObject.values.maxNumberOfScheduledTasks)
+		
 			let tomatoFocusDurationStatus=new RegExp("^([1-5][0-9])$").test(formObject.values["tomatoFocusDuration"])
 			let tomatoShortRestTimeStatus=new RegExp("^([0-9])$").test(formObject.values["tomatoShortRestTime"])
 			let tomatoLongRestTimeStatus=new RegExp("^([0-9]|[1][0-9])$").test(formObject.values["tomatoLongRestTime"])
@@ -812,9 +825,9 @@
 			
 			let acceleratedTestModeTomatoDurationInSecStatus=new RegExp("^([5-9]|[1-5][0-9]|[6][0])$")
 				.test(formObject.values["acceleratedTestModeTomatoDurationInSec"])
-			let completeProgressStatus=(!formObject.values["completeProgressInTitle"]
-				&& !formObject.values["completeProgressInNote"] 
-				&& !formObject.values["completeProgressInJSON"]) ? false:true
+			let completeProgressStatus=formObject.values["completeProgressInTitle"]
+				|| formObject.values["completeProgressInNote"] 
+				|| formObject.values["completeProgressInJSON"]
 
 			let priorityNumberDueIn1DayStatus=new RegExp("^([6-9][0-9][0-9])$").test(formObject.values["priorityNumberDueIn1Day"])
 			let priorityNumberDueIn2DayStatus=new RegExp("^([2-3][0-9][0-9])$").test(formObject.values["priorityNumberDueIn2Day"])
@@ -859,7 +872,8 @@
 				&& iOSObsidianVaultTitleStatus && macOSObsidianVaultTitleStatus
 				&& iOSObsidianFilePathBaseOnVaultStatus && macOSObsidianFilePathBaseOnVaultStatus
 			
-			let validation=tomatoStatus && defaultEstimatedMinutesStatus && todayPlanTimeLeadStatus 
+			let validation=maxNumberOfScheduledTasksStatus && tomatoStatus 
+				&& defaultEstimatedMinutesStatus && todayPlanTimeLeadStatus 
 				&& acceleratedTestModeTomatoDurationInSecStatus && completeProgressStatus 
 				&& startSchedulingForTomorrowStatus && priorityNumberStatus && timeQuantumStrStatus
 				&& outputGroupStatus
@@ -870,7 +884,8 @@
 			try {
 				preferences.write("folderIdsToExclude", formObject.values["foldersToExclude"].map(f=>f.id.primaryKey))
 				preferences.write("tagIdsToExclude", formObject.values["tagsToExclude"].map(t=>t.id.primaryKey))
-			
+				preferences.write("maxNumberOfScheduledTasks", formObject.values.maxNumberOfScheduledTasks)
+				
 				preferences.write("tomatoFocusDuration", formObject.values.tomatoFocusDuration)
 				preferences.write("tomatoShortRestTime", formObject.values.tomatoShortRestTime)
 				preferences.write("tomatoLongRestTime", formObject.values.tomatoLongRestTime)
@@ -945,7 +960,8 @@
   		console.log(`output in ${functionName}`)
   		console.log("folderIdsToExclude: ", libTimer.getFolderIdsToExclude().map(f=>Folder.byIdentifier(f).name))
 		console.log("tagIdsToExclude: ", libTimer.getTagIdsToExclude().map(t=>Tag.byIdentifier(t).name))
-			
+		console.log("maxNumberOfScheduledTasks: ", libTimer.getMaxNumberOfScheduledTasks())
+		
   		console.log("tomatoFocusDuration: ", libTimer.getTomatoFocusDuration())
 		console.log("tomatoShortRestTime: ", libTimer.getTomatoShortRestTime())
 		console.log("tomatoLongRestTime: ", libTimer.getTomatoLongRestTime())
@@ -1317,19 +1333,26 @@
 		return true
 	}
 	
-  
+  	
+  	libTimer.clearTagFromAllTask=function(tagName){
+  		let targetTag = flattenedTags.byName(tagName)
+		if(!targetTag){
+			let errMessage = `There is no “${tagName}” tag. Please run the “initialize tags” action to add the missing tag.`
+			throw new Error(errMessage)
+		}
+		let tagArray = targetTag.flattenedChildren
+		console.log(`tagArray =${tagArray}`)
+		targetTag.tasks.forEach(t=>{t.removeTags(tagArray)})
+  	}
+  	
+  	
 	
 	libTimer.doTaskScheduling=async function(runMode,optionDatas){
 		try{
 			console.log(`doTaskScheduling:runMode=${runMode},optionDatas=${optionDatas}`)
 			//清空task的"Scheduling｜调度"tag
-			let targetTag = flattenedTags.byName("Scheduling|调度")
-			if(!targetTag){
-				let errMessage = "There is no “Scheduling|调度” tag. Please select “initialize tags” from the “Smart Scheduling and Timing” sub-menu in the Automation menu to add the missing tag."
-				throw new Error(errMessage)
-			}
-			let tagArray = targetTag.flattenedChildren
-			targetTag.tasks.forEach(t=>{task.removeTags(tagArray)})
+			libTimer.clearTagFromAllTask("Scheduling|调度")
+			libTimer.clearTagFromAllTask("TimeQuantum|时间段")
 			//取得排除Folders(直接取tasks太多)
 			let foldersToExclude=[]
 			let folderIdsToExclude=libTimer.getFolderIdsToExclude()
@@ -1438,17 +1461,16 @@
 			jobs.sort(libTimer.jobSort)
 			
 			//设置"Scheduling｜调度"tag
-			let listLength=(jobs.length>20)?20:jobs.length
-			if (jobs.length>0){
-				libTimer.toggleTag(jobs[0].obj,"Scheduling|调度","Next")
-			}	    
-			for(let i=1;i<listLength;i++){
-				libTimer.toggleTag(jobs[i].obj,"Scheduling|调度","Ready")									
+			let maxNumberOfScheduledTasks=parseInt(libTimer.getMaxNumberOfScheduledTasks())
+			let listLength=(jobs.length>maxNumberOfScheduledTasks)?maxNumberOfScheduledTasks:jobs.length
+			  
+			for(let i=0;i<listLength;i++){
+				libTimer.toggleTag(jobs[i].obj,"Scheduling|调度","Scheduled")									
 			}	
 			
 			preferences.write("jobs",jobs)
 
-			let title=`“time scheduling”执行完毕`
+			let title=`“task scheduling”执行完毕`
 			let message=`当前运行模式是：${runMode}。\n`
 			message+=`待分配jobs(task)共${jobs.length}个。\n\n`
 			if (jobs.length>0){
@@ -1570,7 +1592,6 @@
 					jobType="生活"
 				}
 			}
-
 		}	
 		return jobType
 	}
@@ -1664,7 +1685,8 @@
 		let timeslice={
 			duration:0,
 			start:null,
-			stop:null
+			stop:null,
+			timeQuantumName:null
 		}
 		dc.minute=duration
 		
@@ -1679,7 +1701,8 @@
 					timeslice={
 						duration:duration,
 						start:tq.vernierPosition,
-						stop:cal.dateByAddingDateComponents(tq.vernierPosition,dc)
+						stop:cal.dateByAddingDateComponents(tq.vernierPosition,dc),
+						timeQuantumName:tq.timeQuantumName
 					}
 					tq.vernierPosition=timeslice.stop
 					break;
@@ -1690,9 +1713,10 @@
 	}
 
 	
-	libTimer.cleanJobPlanTime=function(jobs){
+	libTimer.cleanJobTimeRecords=function(jobs){
 		for (let job of jobs){
 			job.planRecords=[]
+			job.implementRecords=[]
 			job.scheduleStatus=0//0表示未分配状态
 		}
 		preferences.write("jobs",jobs)
@@ -1764,6 +1788,9 @@
 						}
 						t.planRecords.push(planRecord)
 						t.scheduleStatus=1 //已安排时间
+						let task=Task.byIdentifier(t.taskId)
+						libTimer.toggleTag(task,"Scheduling|调度","Arranged")
+						libTimer.toggleTag(task,"TimeQuantum|时间段",timeslice.timeQuantumName)	
 						//修改task剩余时间变量信息
 						remainingTime-=timeslice.duration
 						//新建tomatoJob
@@ -1824,8 +1851,7 @@
 					}
 				}
 			}
-			preferences.write("jobs",jobs)
-			
+			preferences.write("jobs",jobs)	
 		}
 		catch(err){
 			new Alert(err.name, err.message).show()	
@@ -2038,7 +2064,7 @@
 		console.log(`in doTimeArrangement:availableTimeQuantums.length=${availableTimeQuantums.length}`)
 		libTimer.timeArrangementForJobs(timeStartingPoint,availableTimeQuantums,availableJobs,tomatoJobs);
 		
-		let jobs=preferences.read("jobs")//重要！！！函数传参在传数组时不是传的引用
+		let jobs=preferences.read("jobs")
 		let task
 		jobs.forEach(j=>{//恢复以JSON形式保存到preferences后丢失的对象引用
 			task=Task.byIdentifier(j.taskId)
@@ -2338,14 +2364,11 @@
 	
 	libTimer.generatorTomatoJob=function*(tomatoJobs){
 		try{
-			let task
-			for (let t of tomatoJobs){
-				task=Task.byIdentifier(t.taskId)
-				libTimer.toggleTag(task,"Scheduling|调度","Next")
-				yield t
-			}
-		}	
-		catch(err){
+			yield*  tomatoJobs
+			// for (let t of tomatoJobs){
+// 				yield t
+// 			}
+		}catch(err){
 			new Alert(err.name, err.message).show()	
 		}		
 	}

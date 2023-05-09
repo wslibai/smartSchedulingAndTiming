@@ -33,6 +33,10 @@
             "identifier": "cleanSchedulingTask"
         },
         {
+            "image": "clean.png",
+            "identifier": "cleanTomatoClock"
+        },
+        {
             "image": "output.png",
             "identifier": "outputTaskSchedulingData"
         },

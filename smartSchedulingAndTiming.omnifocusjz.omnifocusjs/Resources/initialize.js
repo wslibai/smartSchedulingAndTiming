@@ -31,7 +31,7 @@
 			lib.setupTags(tagGroup,tagTitles)
 
 			tagGroup = "Scheduling|调度"
-			tagTitles = ["Next","Ready","Running","Finished"]
+			tagTitles = ["Scheduled","Arranged","Running","Finished"]
 			lib.setupTags(tagGroup,tagTitles)
 			
 			tagGroup = "Kanban"

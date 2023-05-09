@@ -16,13 +16,13 @@
 					t.parent=task.parent
 					t.containingProject=task.containingProject
 					t.tags=task.tags
-					let message=`job `+lib.getRecordStr(i,t,`taskName`)
-					console.log(message)
+					let msg=`job `+lib.getRecordStr(i,t,`taskName`)
+					console.log(msg)
 					i++
 				}
 				
 				let unArrangementJobs=jobs.filter(j=>j.scheduleStatus===0)
-				message=``
+				let message=``
 				if (unArrangementJobs.length>0){//刚运行完动作taskScheduling后
 					message+=`有任务未分配时间，请运行time arrangement动作为任务分配时间，并运行start tomato clock动作执行任务。\n`
 				}

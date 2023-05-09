@@ -6,11 +6,11 @@
 		try{
 			let jobs=preferences.read("jobs")
 			if (jobs===null || jobs.length===0){
-				let errMessage="无已调度任务需要清除，请先运行task scheduling动作调度任务。"
+				let errMessage="无已分配番茄时钟时间数据需要清除，请先运行time arrangement动作为待处理任务安排时间。"
 				throw new Error(errMessage)
 			}else{
 				let i=0
-				console.log(`[cleanSchedulingTask]当前所有jobs记录：`)
+				console.log(`[cleanTomatoClock]清除前所有jobs记录：`)
 				for (let t of jobs){
 					let task=Task.byIdentifier(t.taskId)
 					t.obj=task //恢复以JSON形式保存到preferences后丢失的对象引用
@@ -21,13 +21,14 @@
 					console.log(msg)
 					i++
 				}
-				jobs=[]
-				preferences.write(`jobs`,jobs)
-				let message=`The scheduling task's data(jobs Array) are cleaned. `
-				message+=`Now,you can do action "task scheduling" again.\n\n`
-				message+=`调度任务的相关数据(jobs数组)已经清理完毕。可再次运行task scheduling动作。`
+				
+				lib.cleanJobTimeRecords(jobs)
+				lib.clearTagFromAllTask("TimeQuantum|时间段")
+				let message=`The tomato clock's data(jobs Array) are cleaned. `
+				message+=`Now,you can do action "time arrangement" again.\n\n`
+				message+=`番茄时钟的相关数据(jobs数组)已经清理完毕。可再次运行time arrangement动作。`
 				console.log(message)
-				new Alert(`清除任务调度数据提醒`,message).show()
+				new Alert(`清除番茄钟数据提醒`,message).show()
 			}
 		}catch(err){
 			new Alert(err.name, err.message).show()	

@@ -1,4 +1,4 @@
-"label" = "clean time data";
+"label" = "clean task time tracking data";
 "shortLabel" = "cleanTimeData";
-"mediumLabel" = "clean time tracking data";
+"mediumLabel" = "clean task time tracking data";
 "longLabel" = "clean time tracking data for selected project/task.";
