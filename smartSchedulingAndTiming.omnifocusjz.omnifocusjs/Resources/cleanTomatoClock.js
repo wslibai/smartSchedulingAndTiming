@@ -4,7 +4,7 @@
 	let action = new PlugIn.Action(async function(selection, sender){
 		const lib=this.libTimer	
 		try{
-			let jobs=preferences.read("jobs")
+			let jobs=await lib.getJobs()
 			if (jobs===null || jobs.length===0){
 				let errMessage="无已分配番茄时钟时间数据需要清除，请先运行time arrangement动作为待处理任务安排时间。"
 				throw new Error(errMessage)
@@ -12,11 +12,6 @@
 				let i=0
 				console.log(`[cleanTomatoClock]清除前所有jobs记录：`)
 				for (let t of jobs){
-					let task=Task.byIdentifier(t.taskId)
-					t.obj=task //恢复以JSON形式保存到preferences后丢失的对象引用
-					t.parent=task.parent
-					t.containingProject=task.containingProject
-					t.tags=task.tags
 					let msg=`job`+lib.getRecordStr(i,t,`taskName`)
 					console.log(msg)
 					i++

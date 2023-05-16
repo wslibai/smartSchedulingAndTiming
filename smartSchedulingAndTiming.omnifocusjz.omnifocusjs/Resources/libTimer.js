@@ -420,11 +420,18 @@
 	}
 	
 	
-	libTimer.getOutputNoteItemBulletSymbol = function(){
+	libTimer.getOutputNoteCompletedItemBulletSymbol = function(){
 		const preferences = libTimer.loadSyncedPrefs()
-		let bulletSymbol=preferences.readString('outputNoteItemBulletSymbol')
-		return (bulletSymbol !== null) ? bulletSymbol : '*'
+		let bulletSymbol=preferences.readString('outputNoteCompletedItemBulletSymbol')
+		return (bulletSymbol !== null) ? bulletSymbol : '- [x]'
 	}	
+	
+	
+	libTimer.getOutputNoteUncompletedItemBulletSymbol = function(){
+		const preferences = libTimer.loadSyncedPrefs()
+		let bulletSymbol=preferences.readString('outputNoteUncompletedItemBulletSymbol')
+		return (bulletSymbol !== null) ? bulletSymbol : '- [ ]'
+	}
 	
 	
 	libTimer.getOutputJournalNamePrefix = function(){
@@ -779,9 +786,14 @@
 		libTimer.addTagFieldToForm("TimeQuantum|时间段","","的时间范围(格式：07:00-09:30)",inputForm)	
 		
 		inputForm.addField(new Form.Field.String(
-			'outputNoteItemBulletSymbol', 
-			'output note item bullet symbol(1-3位非字母、数字、下划线)', 
-			libTimer.getOutputNoteItemBulletSymbol()))
+			'outputNoteCompletedItemBulletSymbol', 
+			'output note completed item bullet symbol(1-5位)', 
+			libTimer.getOutputNoteCompletedItemBulletSymbol()))
+		
+		inputForm.addField(new Form.Field.String(
+			'outputNoteUncompletedItemBulletSymbol', 
+			'output note uncompleted item bullet symbol(1-5位)', 
+			libTimer.getOutputNoteUncompletedItemBulletSymbol()))
 		
 		inputForm.addField(new Form.Field.String(
 			'outputJournalNamePrefix', 
@@ -859,8 +871,9 @@
 			//let timeQuantumStrPattern=new RegExp("^([0-1][0-9]|[2][0-3]):([0-5][0-9])-([0-1][0-9]|[2][0-3]):([0-5][0-9])$")
 			let timeQuantumStrStatus=libTimer.getTagFieldValidation("TimeQuantum|时间段","",timeQuantumStrPattern,formObject)
 			
-			let bulletSymbolPattern=new RegExp("^\\W{1,3}$")
-			let outputNoteItemBulletSymbolStatus=bulletSymbolPattern.test(formObject.values.outputNoteItemBulletSymbol)
+			let bulletSymbolPattern=new RegExp("^.{1,5}$")
+			let outputNoteCompletedItemBulletSymbolStatus=bulletSymbolPattern.test(formObject.values.outputNoteCompletedItemBulletSymbol)
+			let outputNoteUncompletedItemBulletSymbolStatus=bulletSymbolPattern.test(formObject.values.outputNoteUncompletedItemBulletSymbol)
 			let outputJournalNamePrefixStatus=(formObject.values.outputJournalNamePrefix!==``)
 			let iOSObsidianVaultTitleStatus=(formObject.values.iOSObsidianVaultTitle!==``)
 			let macOSObsidianVaultTitleStatus=(formObject.values.macOSObsidianVaultTitle!==``)
@@ -868,7 +881,8 @@
 			let iOSObsidianFilePathBaseOnVaultStatus=filePathPattern.test(formObject.values.iOSObsidianFilePathBaseOnVault)
 			let macOSObsidianFilePathBaseOnVaultStatus=filePathPattern.test(formObject.values.macOSObsidianFilePathBaseOnVault)
 			
-			let outputGroupStatus=outputNoteItemBulletSymbolStatus && outputJournalNamePrefixStatus 
+			let outputGroupStatus=outputNoteCompletedItemBulletSymbolStatus && outputNoteUncompletedItemBulletSymbolStatus
+				&& outputJournalNamePrefixStatus 
 				&& iOSObsidianVaultTitleStatus && macOSObsidianVaultTitleStatus
 				&& iOSObsidianFilePathBaseOnVaultStatus && macOSObsidianFilePathBaseOnVaultStatus
 			
@@ -922,7 +936,8 @@
 				libTimer.storeTagFieldToPreferences("EstimatedTime|估计时间","priorityNumber-",formObject)
 				libTimer.storeTagFieldToPreferences("TimeQuantum|时间段","",formObject)
 				
-				preferences.write('outputNoteItemBulletSymbol', formObject.values.outputNoteItemBulletSymbol)
+				preferences.write('outputNoteCompletedItemBulletSymbol', formObject.values.outputNoteCompletedItemBulletSymbol)
+				preferences.write('outputNoteUncompletedItemBulletSymbol', formObject.values.outputNoteUncompletedItemBulletSymbol)
 				preferences.write('outputJournalNamePrefix', formObject.values.outputJournalNamePrefix)
 				preferences.write("iOSObsidianVaultTitle", formObject.values.iOSObsidianVaultTitle)
 				preferences.write("macOSObsidianVaultTitle", formObject.values.macOSObsidianVaultTitle)
@@ -996,7 +1011,8 @@
 		libTimer.outputTagPreferences("EstimatedTime|估计时间","priorityNumber-")
 		libTimer.outputTagPreferences("TimeQuantum|时间段","")
 		
-		console.log("outputNoteItemBulletSymbol: ", libTimer.getOutputNoteItemBulletSymbol())
+		console.log("outputNoteCompletedItemBulletSymbol: ", libTimer.getOutputNoteCompletedItemBulletSymbol())
+		console.log("outputNoteUncompletedItemBulletSymbol: ", libTimer.getOutputNoteUncompletedItemBulletSymbol())
 		console.log("outputJournalNamePrefix: ", libTimer.getOutputJournalNamePrefix())
 		console.log("iOSObsidianVaultTitle: ", libTimer.getIOSObsidianVaultTitle())
 		console.log("macOSObsidianVaultTitle: ", libTimer.getMacOSObsidianVaultTitle())
@@ -1341,7 +1357,7 @@
 			throw new Error(errMessage)
 		}
 		let tagArray = targetTag.flattenedChildren
-		console.log(`tagArray =${tagArray}`)
+		console.log(`[clearTagFromAllTask] tagArray =${tagArray}`)
 		targetTag.tasks.forEach(t=>{t.removeTags(tagArray)})
   	}
   	
@@ -1352,6 +1368,7 @@
 			console.log(`doTaskScheduling:runMode=${runMode},optionDatas=${optionDatas}`)
 			//清空task的"Scheduling｜调度"tag
 			libTimer.clearTagFromAllTask("Scheduling|调度")
+			//清空task的"TimeQuantum|时间段"tag
 			libTimer.clearTagFromAllTask("TimeQuantum|时间段")
 			//取得排除Folders(直接取tasks太多)
 			let foldersToExclude=[]
@@ -1464,6 +1481,12 @@
 			let maxNumberOfScheduledTasks=parseInt(libTimer.getMaxNumberOfScheduledTasks())
 			let listLength=(jobs.length>maxNumberOfScheduledTasks)?maxNumberOfScheduledTasks:jobs.length
 			  
+			if (jobs.length>listLength){//删除多余job记录
+				for (let i=listLength;i<jobs.length;i++){
+					jobs.pop()
+				}
+			}
+			
 			for(let i=0;i<listLength;i++){
 				libTimer.toggleTag(jobs[i].obj,"Scheduling|调度","Scheduled")									
 			}	
@@ -1717,7 +1740,7 @@
 		for (let job of jobs){
 			job.planRecords=[]
 			job.implementRecords=[]
-			job.scheduleStatus=0//0表示未分配状态
+			job.scheduleStatus=0
 		}
 		preferences.write("jobs",jobs)
 	}
@@ -2932,7 +2955,7 @@
 				}
 			}
 			console.log("output Journal Name Prefix: ", journalNamePrefix)
-			let noteTitle=journalNamePrefix+`-`+implementDate
+			let noteTitle=journalNamePrefix+`-`+planDate
 			let YAMLheader=`---\nplan date: [[${planDate}]]\nimplement Date: [[${implementDate}]]\nfrom: omnifocus smartSchedulingAndTiming plug-in\n---`
 	
 			let targetUrl= urlTemplate.replace('{{VAULT}}', encodeURIComponent(vaultTitle))
@@ -2973,8 +2996,9 @@
 	
 	
 	libTimer.getRecordStr=function(recordCounter,recordObj,KeyFieldName){
-		let recordStr=`### `+libTimer.getOutputNoteItemBulletSymbol()+` [${recordCounter}] `+recordObj[KeyFieldName]+`\n`
+		let recordStr=`{{BULLETSYMBOL}}`+` [${recordCounter}] `+recordObj[KeyFieldName]+`\n`
 		recordStr+=`Field:`
+		let completedFlag=false
 		for (let key in recordObj){
 			if (key!==KeyFieldName && recordObj[key]!==null){
 				switch(true){
@@ -2997,9 +3021,49 @@
 						recordStr+=` @${key}(${recordObj[key]})`
 						break
 				}
+				if (key===`scheduleStatus` && recordObj[key]===4){completedFlag=true}
+				if (key===`runState` && recordObj[key]===true){completedFlag=true}
 			}
 		}
+		recordStr+=`\n`
+		let completedSymbol=libTimer.getOutputNoteCompletedItemBulletSymbol()
+		let uncompletedSymbol=libTimer.getOutputNoteUncompletedItemBulletSymbol()
+		let bulletSymbol=(completedFlag)?completedSymbol:uncompletedSymbol
+		recordStr=recordStr.replace(`{{BULLETSYMBOL}}`,bulletSymbol)
 		return recordStr
+	}
+	
+	
+	libTimer.getJobs=async function(){
+		let jobs=preferences.read("jobs")
+		for (let t of jobs){
+			let task=Task.byIdentifier(t.taskId)
+			//恢复以JSON形式保存到preferences后丢失的对象引用
+			t.obj=task 
+			t.parent=task.parent
+			t.containingProject=task.containingProject
+			t.tags=task.tags
+			//update other fields data
+			t.effectiveDeferDate=task.effectiveDeferDate
+			t.effectiveDueDate=task.effectiveDueDate
+			t.estimatedMinutes=task.estimatedMinutes
+			t.timeSpent=await libTimer.getTimeSpent(task)
+			t.effectiveFlagged=task.effectiveFlagged
+			t.completed=task.completed
+			t.note=task.note		
+		}
+		return jobs
+	}
+	
+	
+	libTimer.getTomatoJobs=function(){
+		let tomatoJobs=preferences.read("tomatoJobs")
+		for (let t of tomatoJobs){
+			let task=Task.byIdentifier(t.taskId)
+			//恢复以JSON形式保存到preferences后丢失的对象引用
+			t.containingProject=task.containingProject
+		}
+		return tomatoJobs
 	}
 	
 	

@@ -4,18 +4,13 @@
 	let action = new PlugIn.Action(async function(selection, sender){
 		const lib=this.libTimer	
 		try{
-			let jobs=preferences.read("jobs")
+			let jobs=await lib.getJobs()
 			if (jobs===null || jobs.length===0){
 				lib.selectModeAndRunScheduling()
 			}else{
 				let i=0
 				console.log(`[taskScheduling]当前所有jobs记录：`)
 				for (let t of jobs){
-					let task=Task.byIdentifier(t.taskId)
-					t.obj=task //恢复以JSON形式保存到preferences后丢失的对象引用
-					t.parent=task.parent
-					t.containingProject=task.containingProject
-					t.tags=task.tags
 					let msg=`job `+lib.getRecordStr(i,t,`taskName`)
 					console.log(msg)
 					i++

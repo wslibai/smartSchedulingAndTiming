@@ -14,16 +14,7 @@
 		try {
 			const lib=this.libTimer
 			lib.validatePreferences("Action:startTomatoClock")
-			let tomatoJobs=preferences.read("tomatoJobs")
-			let i=0
-			console.log(`[startTomatoClock]当前所有tomatoJobs记录：`)
-			for (let t of tomatoJobs){
-				let task=Task.byIdentifier(t.taskId)
-				t.containingProject=task.containingProject
-				let message=`tomatoJob`+lib.getRecordStr(i,t,`taskName`)			
-				console.log(message)
-				i++	
-			}
+			let tomatoJobs=lib.getTomatoJobs()
 			let message=`请先检视(review)您的未完成项目(project)，修改task的相关属性，添加相关Tag，`
 			message+=`调整“Scheduling|调度”Tag视图中任务的Flaged、四象限Tag、预测视图的今日tag、Due、Defer等参数改变待执行任务列表，`
 			message+=`再从自动化菜单的Smart Scheduling and Timing子菜单运行task scheduling和time arrangement动作，重新生成tomatoJobs。`
@@ -33,7 +24,15 @@
 				console.log(errMessage)
 				throw new Error(errMessage)
 			}
-
+			
+			let i=0
+			console.log(`[startTomatoClock]当前所有tomatoJobs记录：`)
+			for (let t of tomatoJobs){
+				let msg=`tomatoJob`+lib.getRecordStr(i,t,`taskName`)			
+				console.log(msg)
+				i++	
+			}
+			
 			let uncompletedTomatoJobs=tomatoJobs.filter(t=>!t.runState)
 			if (uncompletedTomatoJobs===null || uncompletedTomatoJobs.length===0){
 				let errMessage=`您的所有tomatoJob均已完成。\n\n`+message
